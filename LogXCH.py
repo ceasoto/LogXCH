@@ -340,7 +340,38 @@ def extract_transaction_summary(log_lines):
         df = df[columns]
     
     return df
-
+# Extraer inicio de conexión basado en billId
+def extract_start_connection(log_lines, transaction_df):
+    start_connections = []
+    for line in log_lines:
+        # Extraer timestamp
+        match_timestamp = re.search(r'\[(.*?)\]', line)
+        timestamp = match_timestamp.group(1) if match_timestamp else "Unknown Timestamp"
+        
+        # Buscar líneas con "carVIN:DCBCarVINEntity"
+        if "carVIN:DCBCarVINEntity" in line and "billId" in line:
+            # Extraer el billId y el valor de MAC
+            match_bill_id = re.search(r'billId\s*:\s*(\d+)', line)
+            match_mac = re.search(r'MAC=\'([^\']+)\'', line)
+            if match_bill_id and match_mac:
+                bill_id = match_bill_id.group(1)
+                mac_value = match_mac.group(1)
+                
+                # Agregar los datos extraídos
+                start_connections.append({
+                    'billId': bill_id,
+                    'Start_connection': timestamp,
+                    'MAC': mac_value
+                })
+    
+    # Crear DataFrame con las conexiones encontradas
+    start_connections_df = pd.DataFrame(start_connections)
+    
+    # Combinar con el DataFrame original basado en el billId
+    if not start_connections_df.empty:
+        transaction_df = transaction_df.merge(start_connections_df, on='billId', how='left')
+    
+    return transaction_df
 
 # Streamlit interfaz
 st.title("Log Analyzer and Temperature Plot")
@@ -376,7 +407,7 @@ if error_codes is not None:
         # Procesar DCB logs
         dcb_results = process_dcb_logs(combined_log_lines)
         # Extraer y mostrar los resúmenes de transacciones
-        transaction_summary = extract_transaction_summary(combined_log_lines)
+        transaction_summary = extract_transaction_summary(log_lines)
         # Mostrar resultados de análisis de errores
         if not log_data.empty:
             st.write("Error Results:")
@@ -422,15 +453,17 @@ if error_codes is not None:
         else:
             st.write("No DCB data found.")
         if not transaction_summary.empty:
-            st.write("Transaction Summaries:")
+            # Buscar y agregar inicio de conexión y MAC al DataFrame
+            transaction_summary = extract_start_connection(log_lines, transaction_summary)
+            
+            st.write("Transaction Summaries with Connection Data:")
             st.dataframe(transaction_summary)
             st.download_button(
-                label="Download Transaction Summary as CSV",
+                label="Download Transaction Summary with Connection Data as CSV",
                 data=transaction_summary.to_csv(index=False),
-                file_name="transaction_summary.csv",
+                file_name="transaction_summary_with_connection_data.csv",
                 mime="text/csv"
             )
         else:
             st.write("No transaction summaries found in the uploaded file.")
-else:
     st.stop()
