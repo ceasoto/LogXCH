@@ -324,25 +324,28 @@ if error_codes is not None:
     log_files = st.file_uploader("Upload Log Files", type=["txt"], accept_multiple_files=True)
     
     if log_files:
-        combined_results = pd.DataFrame()
-        
+        # Combinar todas las líneas de los archivos en un único conjunto
+        combined_log_lines = []
         for log_file in log_files:
-            # Leer las líneas del archivo de log
+            # Leer las líneas de cada archivo y agregarlas a la lista combinada
             log_lines = log_file.readlines()
             log_lines = [line.decode("utf-8") for line in log_lines]
+            combined_log_lines.extend(log_lines)  # Agregar las líneas al archivo combinado
+
+        # Procesar el archivo combinado
         # Extraer datos de temperatura
-        temperature_data = extract_temperature_data(log_lines)
+        temperature_data = extract_temperature_data(combined_log_lines)
         
         # Analizar el log
-        log_data = analyze_log(log_lines, error_codes)
+        log_data = analyze_log(combined_log_lines, error_codes)
 
         # Extraer cambios de estado de conectores
-        connector_states = extract_connector_states(log_lines)
+        connector_states = extract_connector_states(combined_log_lines)
 
         # Procesar DCB logs
-        dcb_results = process_dcb_logs(log_lines)
+        dcb_results = process_dcb_logs(combined_log_lines)
 
-        
+        # Mostrar resultados de análisis de errores
         if not log_data.empty:
             st.write("Error Results:")
             st.dataframe(log_data)
@@ -360,6 +363,7 @@ if error_codes is not None:
             st.line_chart(temperature_data.set_index('Timestamp'))
         else:
             st.write("No temperature data found.")
+        
         # Mostrar cambios de estado de conectores
         if not connector_states.empty:
             st.write("Connector State Changes:")
@@ -371,7 +375,8 @@ if error_codes is not None:
                 mime="text/csv"
             )
         else:
-            st.write("No connector state changes found.")      
+            st.write("No connector state changes found.")
+        
         # Mostrar resultados de DCB
         if not dcb_results.empty:
             st.write("DCB Results:")
@@ -383,6 +388,7 @@ if error_codes is not None:
                 mime="text/csv"
             )
         else:
-            st.write("No DCB data found.")  
+            st.write("No DCB data found.")
+ 
 else:
     st.stop()
