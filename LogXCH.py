@@ -370,6 +370,10 @@ def extract_start_connection(log_lines, transaction_df):
     # Combinar con el DataFrame original basado en el billId
     if not start_connections_df.empty:
         transaction_df = transaction_df.merge(start_connections_df, on='billId', how='left')
+        
+        # Reordenar columnas
+        columns = ['Start_connection', 'Timestamp', 'MAC'] + [col for col in transaction_df.columns if col not in ['Start_connection', 'Timestamp', 'MAC']]
+        transaction_df = transaction_df[columns]
     
     return transaction_df
 
@@ -407,7 +411,7 @@ if error_codes is not None:
         # Procesar DCB logs
         dcb_results = process_dcb_logs(combined_log_lines)
         # Extraer y mostrar los resúmenes de transacciones
-        transaction_summary = extract_transaction_summary(log_lines)
+        transaction_summary = extract_transaction_summary(combined_log_lines)
         # Mostrar resultados de análisis de errores
         if not log_data.empty:
             st.write("Error Results:")
