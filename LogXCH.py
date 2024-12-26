@@ -319,11 +319,11 @@ st.write("Upload a log file to analyze logs for errors and extract temperature d
 error_codes = load_error_codes()
 if error_codes is not None:
     st.write("Error Codes Loaded:")
-    st.dataframe(error_codes)  # Mostrar los códigos de error cargados en Streamlit
+    st.dataframe(error_codes)
     
-    log_file = st.file_uploader("Upload Log File", type=["txt"])
+    log_files = st.file_uploader("Upload Log Files", type=["txt"], accept_multiple_files=True)
     
-    if log_file:
+    if log_files:
         # Leer las líneas del archivo de log
         log_lines = log_file.readlines()
         log_lines = [line.decode("utf-8") for line in log_lines]  # Decodificar las líneas del archivo
