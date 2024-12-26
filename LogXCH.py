@@ -152,6 +152,7 @@ byte5_codes = {
     0x5f: "V2G_DIN_ERROR_SOCKET_SEND",
     0x60: "V2G_DIN_ERROR_NO_PROTOCOL"
 }
+
 # Extraer líneas con DCB y decodificar
 def process_dcb_logs(log_lines):
     dcb_data = []
@@ -161,8 +162,10 @@ def process_dcb_logs(log_lines):
         timestamp = extracted_chars if extracted_chars else "Unknown Timestamp"
         
         # Buscar "812d" en la línea
-        if "812d" in line:
-            match_bytes = re.findall(r'0x[0-9A-Fa-f]+', line)
+        match_dcb = re.search(r'812d>>>>(.*)', line)
+        if match_dcb:
+            dcb_code = match_dcb.group(1).strip()  # Extraer todo el contenido después de "812d>>>>"
+            match_bytes = re.findall(r'0x[0-9A-Fa-f]+', dcb_code)
             if len(match_bytes) == 6:
                 byte0 = int(match_bytes[0], 16)
                 byte1 = int(match_bytes[1], 16)
@@ -173,7 +176,7 @@ def process_dcb_logs(log_lines):
                 
                 dcb_data.append({
                     'Timestamp': timestamp,
-                    'Code': "812d",  # Agregar columna para el código
+                    '812d': f"812d>>>>{dcb_code}",  # Incluir la línea completa analizada
                     'Connector': byte0,
                     'CCS Standard': byte1,
                     'Stop Reason': byte2_codes.get(byte2, f"Unknown (0x{byte2:X})"),
@@ -183,6 +186,7 @@ def process_dcb_logs(log_lines):
                 })
     
     return pd.DataFrame(dcb_data)
+
 
 # Cargar archivo de códigos de error automáticamente con dirección relativa
 def load_error_codes():
