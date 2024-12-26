@@ -309,7 +309,31 @@ def extract_connector_states(log_lines):
     
     return pd.DataFrame(connector_data)
 
-
+# Extraer y tabular información de resumen de la transacción
+def extract_transaction_summary(log_lines):
+    transactions = []
+    for line in log_lines:
+        # Extraer timestamp al inicio de la línea
+        match_timestamp = re.search(r'\[(.*?)\]', line)
+        timestamp = match_timestamp.group(1) if match_timestamp else "Unknown Timestamp"
+        
+        # Buscar "reportChargeEnded" para identificar líneas con resumen de transacción
+        if "reportChargeEnded" in line:
+            # Extraer la sección de resumen de la transacción
+            match_transaction = re.search(r'reportChargeEnded\s*=\s*ReportChargeEnded\{(.*)\}', line)
+            if match_transaction:
+                transaction_data = match_transaction.group(1)
+                
+                # Extraer pares clave-valor
+                key_value_pairs = re.findall(r'(\w+)=([\w\.\'\-]+)', transaction_data)
+                transaction_dict = {key: value for key, value in key_value_pairs}
+                
+                # Agregar timestamp al resumen
+                transaction_dict['Timestamp'] = timestamp
+                transactions.append(transaction_dict)
+    
+    # Convertir los resúmenes extraídos a un DataFrame
+    return pd.DataFrame(transactions)
 
 # Streamlit interfaz
 st.title("Log Analyzer and Temperature Plot")
@@ -344,7 +368,8 @@ if error_codes is not None:
 
         # Procesar DCB logs
         dcb_results = process_dcb_logs(combined_log_lines)
-
+        # Extraer y mostrar los resúmenes de transacciones
+        transaction_summary = extract_transaction_summary(log_lines)
         # Mostrar resultados de análisis de errores
         if not log_data.empty:
             st.write("Error Results:")
@@ -389,6 +414,16 @@ if error_codes is not None:
             )
         else:
             st.write("No DCB data found.")
- 
+        if not transaction_summary.empty:
+            st.write("Transaction Summaries:")
+            st.dataframe(transaction_summary)
+            st.download_button(
+                label="Download Transaction Summary as CSV",
+                data=transaction_summary.to_csv(index=False),
+                file_name="transaction_summary.csv",
+                mime="text/csv"
+            )
+        else:
+            st.write("No transaction summaries found in the uploaded file.")
 else:
     st.stop()
