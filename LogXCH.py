@@ -333,7 +333,14 @@ def extract_transaction_summary(log_lines):
                 transactions.append(transaction_dict)
     
     # Convertir los resúmenes extraídos a un DataFrame
-    return pd.DataFrame(transactions)
+    df = pd.DataFrame(transactions)
+    # Asegurar que Timestamp esté en la primera columna
+    if not df.empty:
+        columns = ['Timestamp'] + [col for col in df.columns if col != 'Timestamp']
+        df = df[columns]
+    
+    return df
+
 
 # Streamlit interfaz
 st.title("Log Analyzer and Temperature Plot")
@@ -369,7 +376,7 @@ if error_codes is not None:
         # Procesar DCB logs
         dcb_results = process_dcb_logs(combined_log_lines)
         # Extraer y mostrar los resúmenes de transacciones
-        transaction_summary = extract_transaction_summary(log_lines)
+        transaction_summary = extract_transaction_summary(combined_log_lines)
         # Mostrar resultados de análisis de errores
         if not log_data.empty:
             st.write("Error Results:")
