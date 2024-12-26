@@ -173,6 +173,7 @@ def process_dcb_logs(log_lines):
                 
                 dcb_data.append({
                     'Timestamp': timestamp,
+                    'Code': "812d",  # Agregar columna para el código
                     'Connector': byte0,
                     'CCS Standard': byte1,
                     'Stop Reason': byte2_codes.get(byte2, f"Unknown (0x{byte2:X})"),
