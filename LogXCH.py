@@ -324,10 +324,12 @@ if error_codes is not None:
     log_files = st.file_uploader("Upload Log Files", type=["txt"], accept_multiple_files=True)
     
     if log_files:
-        # Leer las líneas del archivo de log
-        log_lines = log_file.readlines()
-        log_lines = [line.decode("utf-8") for line in log_lines]  # Decodificar las líneas del archivo
+        combined_results = pd.DataFrame()
         
+        for log_file in log_files:
+            # Leer las líneas del archivo de log
+            log_lines = log_file.readlines()
+            log_lines = [line.decode("utf-8") for line in log_lines]
         # Extraer datos de temperatura
         temperature_data = extract_temperature_data(log_lines)
         
