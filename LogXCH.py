@@ -370,11 +370,10 @@ def extract_start_connection(log_lines, transaction_df):
     # Combinar con el DataFrame original basado en el billId
     if not start_connections_df.empty:
         transaction_df = transaction_df.merge(start_connections_df, on='billId', how='left')
-        
-        # Reordenar columnas
         columns = ['Start_connection', 'Timestamp', 'MAC'] + [col for col in transaction_df.columns if col not in ['Start_connection', 'Timestamp', 'MAC']]
         transaction_df = transaction_df[columns]
-    
+        transaction_df.rename(columns={'Timestamp': 'Stop_connection'}, inplace=True)
+
     return transaction_df
 
 # Streamlit interfaz
