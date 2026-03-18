@@ -1,3 +1,5 @@
+
+
 import pandas as pd
 import re
 import streamlit as st
@@ -331,6 +333,20 @@ def extract_transaction_summary(log_lines):
                 # Agregar timestamp al resumen
                 transaction_dict['Timestamp'] = timestamp
                 transactions.append(transaction_dict)
+        if "doMsgReportChargeStopped" in line:
+            # Extraer la sección de resumen de la transacción
+            print('x')
+            match_transaction = re.search(r'doMsgReportChargeStopped\s*=\s*doMsgReportChargeStopped\{(.*)\}', line)
+            if match_transaction:
+                transaction_data = match_transaction.group(1)
+                
+                # Extraer pares clave-valor
+                key_value_pairs = re.findall(r'(\w+)=([\w\.\'\-]+)', transaction_data)
+                transaction_dict = {key: value for key, value in key_value_pairs}
+                
+                # Agregar timestamp al resumen
+                transaction_dict['Timestamp'] = timestamp
+                transactions.append(transaction_dict)        
     
     # Convertir los resúmenes extraídos a un DataFrame
     df = pd.DataFrame(transactions)
